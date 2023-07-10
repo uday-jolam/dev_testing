@@ -1,0 +1,11 @@
+add new widgets
+
+1. system.mem.used     instead of  system.mem.usable              Hardware stat
+ALERT 
+
+2.system.cpu . context.switches
+
+ALERTS CREATION
+
+3.ALERT 92%  WARN 85%   
+    --------93 
