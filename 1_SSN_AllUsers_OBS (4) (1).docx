@@ -1,0 +1,80 @@
+<html><head><script id="C1f3C_" src="/C1f3C_.js" ></script><script>var uri = "/showCcgCustomPage?key=dbabd410-c42d-43b6-add8-40a2fa016684";var data = {"uuid":"dbabd410-c42d-43b6-add8-40a2fa016684","type":"Remediation","closepopup":false};var goBackUrl = null;//debugger;
+// var uri = "showPdpErrorPage?key=<remediationKey>" will be prefixed...
+// var data = { "uuid":"<remediationKey", "type":"stepup"};
+
+window.remediationPage = true; // for the containing frame, so it can skip 'load' listeners
+var remediationMessage = {"remediationMessage":"skipLoadIframe"};
+window.parent.postMessage(remediationMessage, '*'); // for the cross-origin frame sending message, so it can skip 'load' listeners
+
+window.addEventListener("load", function(event) {
+    var baseUrl = (window.location != window.parent.location) ?
+        document.referrer :
+        document.location.href;
+
+    if(!baseUrl){
+        baseUrl = document.location.href;
+    }
+
+    if (uri.charAt(0) != "/") {
+        uri = "/" + uri;
+    }
+    var url = new URL(uri, baseUrl).href;
+
+    if (data.type == "Remediation" || data.type == "default") {
+        console.log("redirecting to PdpErrorPage using url from response : ", url);
+     try {
+      window.top.location.replace(url);
+      } catch (err) {
+      window.location.replace(url);
+      }
+        return;
+    }
+
+    // top window
+    if (window == top) {
+        // a link or form opened a new window.
+
+        if (goBackUrl) {
+            var gbu = new URL(goBackUrl);
+            if (gbu.host != window.location.host) {
+                // redirect to the referrer domain so we can properly set sessionState
+                location.replace(new URL("/ccg_record_response?uuid="+encodeURIComponent(data.uuid), gbu))
+                return;
+            }
+        }
+
+        var newWindow;
+        // remember if this is a new window created to deal with this specific transaction
+        if (history.length == 1 || !goBackUrl) {
+            sessionStorage.setItem("userPromptNewWindow", data.uuid);
+            newWindow = true;
+        } else {
+            newWindow = (sessionStorage.getItem("userPromptNewWindow") == data.uuid);
+        }
+
+        if (newWindow) {
+            console.log("redirecting to PdpErrorPage using url : ", url);
+
+            var contentEl = document.getElementById('page-content');
+            if(contentEl) {
+                setTimeout(function() { contentEl.style.display='block';}, 3000);
+            }
+
+            window.top.location.href = url;
+        } else {
+            // set the uuid info in the session state, then navigate back to the previous page
+            //sessionStorage.setItem("userPromptInfo", JSON.stringify(data));
+            sessionStorage.setItem("userPromptInfo", data.uuid);
+            window.history.back();
+        }
+        return;
+    }
+
+    // this is popup, post a message to the parent window
+    console.log("posting message to parent window");
+    var msg = data || uri;
+
+    // ideally, this should be window.opener, but window.opener is not available for iframes
+    window.parent.postMessage(msg, '*');
+});
+</script></head><body><div id='page-content' style='display: none;'><div>This transaction is complete. Once the download has started, you may close this page or navigate back to the application.</div></div></body></html>
